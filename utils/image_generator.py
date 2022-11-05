@@ -30,7 +30,19 @@ class ImageGenerator(object):
         #                         TODO: YOUR CODE HERE                        #
         #######################################################################
         # raise NotImplementedError
+        self.x = x
+        self.y = y
+        self.num_of_samples = x.shape[0]
+        self.height = x.shape[1]
+        self.width = x.shape[2]
+        self.trans_height = 0
+        self.trans_width = 0
+        self.degree_of_rotation = None
+        self.is_horizontal_flip = False
+        self.is_vertical_flip = False
+        self.is_add_noise = False
         
+        self.is_bright = False
         #######################################################################
         #                                END TODO                             #
         #######################################################################
@@ -47,7 +59,7 @@ class ImageGenerator(object):
         self.bright = None
         self.x_aug = self.x.copy()
         self.y_aug = self.y.copy()
-        self.N_aug = self.N
+        self.N_aug = self.num_of_samples
     
     
     def create_aug_data(self):
@@ -108,6 +120,21 @@ class ImageGenerator(object):
         #                         TODO: YOUR CODE HERE                        #
         #######################################################################
         # raise NotImplementedError
+        x_aug = self.x_aug
+        y_aug = self.y_aug
+        batch_total = self.num_of_samples // batch_size
+        batch_count = 0
+        
+        while True:
+            if batch_count < batch_total:
+                batch_count += 1
+                yield (x_aug[batch_count * batch_size: (batch_count + 1) * batch_size], y_aug[batch_count * batch_size: (batch_count + 1) * batch_size])
+            else:
+                idexs = np.arange(batch_total)
+                np.random.shuffle(idexs)
+                self.x_aug = x_aug[idexs].copy()
+                self.y_aug = y_aug[idexs].copy()
+                batch_count = 0
         
                 
         #######################################################################
@@ -124,7 +151,12 @@ class ImageGenerator(object):
         #                         TODO: YOUR CODE HERE                        #
         #######################################################################
         # raise NotImplementedError
-        
+        img = images
+        fig = plt.figure(figsize=(10, 10))
+        for i in range(0,16):
+            ax = fig.add_subplot(4, 4, i + 1)
+            ax.imshow(img[i].reshape(28, 28), 'gray')
+            ax.axis('off')
         #######################################################################
         #                                END TODO                             #
         #######################################################################
@@ -148,7 +180,14 @@ class ImageGenerator(object):
         #                         TODO: YOUR CODE HERE                        #
         #######################################################################
         # raise NotImplementedError
-        
+        print(self.x.shape)
+        self.trans_height += shift_height
+        self.trans_width += shift_width
+        translated = np.roll(self.x.copy(), (shift_width, shift_height), axis=(1, 2))
+        print('Current translation: ', self.trans_height, self.trans_width)
+        self.translated = (translated, self.y.copy())
+        self.N_aug += self.num_of_samples
+        return translated
         #######################################################################
         #                                END TODO                             #
         #######################################################################
@@ -167,7 +206,12 @@ class ImageGenerator(object):
         #                         TODO: YOUR CODE HERE                        #
         #######################################################################
         # raise NotImplementedError
-        
+        self.degree_of_rotation = angle
+        rotated = rotate(self.x.copy(), angle, reshape=False, axes=(1, 2))
+        print('Currrent rotation: ', self.degree_of_rotation)
+        self.rotated = (rotated, self.y.copy())
+        self.N_aug += self.num_of_samples
+        return rotated
         #######################################################################
         #                                END TODO                             #
         #######################################################################
@@ -195,7 +239,7 @@ class ImageGenerator(object):
         print('Vertical flip: ', self.is_vertical_flip, 'Horizontal flip: ', self.is_horizontal_flip)
     
         self.flipped = (flipped,self.y.copy())
-        self.N_aug += self.N
+        self.N_aug += self.num_of_samples
         return flipped
 
     
@@ -213,7 +257,19 @@ class ImageGenerator(object):
         #                         TODO: YOUR CODE HERE                        #
         #######################################################################
         # raise NotImplementedError
-        
+        mask = np.random.choice(self.num_of_samples, self.num_of_samples * portion)
+        x_added = self.x[mask].copy()
+        y_added = self.y[mask].copy()
+        row, col, ch = self.x[0].shape
+
+        for target in x_added:
+            gauss = np.random.normal(0, amplitude, (row, col, ch)).astype(self.x[0].dtype)
+            target += gauss
+
+        self.added = (x_added, y_added)
+        self.is_add_noise = True
+        print('Current noise portion {}, amplitude {}'.format(portion, amplitude))
+        return x_added
         #######################################################################
         #                                END TODO                             #
         #######################################################################
@@ -236,7 +292,7 @@ class ImageGenerator(object):
             bright[i, :, :, :][bright[i,:,:,:] >= 255] = 255
             
         self.bright = (bright, self.y.copy())
-        self.N_aug += self.N
+        self.N_aug += self.num_of_samples
         print("Brightness increased by a factor of:", factor)
         return bright
 

@@ -60,6 +60,12 @@ def bn_forward(x, gamma, beta, bn_params, mode):
         #         moving_mean and moving_var in the bn_params       #
         #############################################################
         #raise NotImplementedError
+        mean = np.mean(x, axis=0)
+        var = np.var(x, axis=0)
+        current_mean, current_var = mean, var
+        out = gamma*(x-current_mean)/np.sqrt(current_var+eps) + beta
+        moving_mean = decay*moving_mean + (1-decay)*current_mean
+        moving_var = decay*moving_var + (1-decay)*current_var 
         pass
         #############################################################
         #                       END OF YOUR CODE                    #
@@ -71,6 +77,10 @@ def bn_forward(x, gamma, beta, bn_params, mode):
         # TODO: Batch normalization forward test mode               #
         #############################################################
         #raise NotImplementedError
+        mean = moving_mean
+        var = moving_var
+        x_norm = (x - mean) / np.sqrt(var + eps)
+        out = gamma * x_norm + beta
         pass
         #############################################################
         #                       END OF YOUR CODE                    #
@@ -132,6 +142,9 @@ def dropout_forward(x, dropout_config, mode):
         ###########################################
         #raise NotImplementedError
         pass
+        p = np.random.binomial(1,keep_prob, x.shape)
+        cache = p
+        out = x * p
         ###########################################
         #             END OF YOUR CODE            #
         ###########################################
@@ -142,6 +155,7 @@ def dropout_forward(x, dropout_config, mode):
         # No need to use mask here.              #
         ##########################################
         #raise NotImplementedError
+        out = x * keep_prob
         pass
         ###########################################
         #             END OF YOUR CODE            #

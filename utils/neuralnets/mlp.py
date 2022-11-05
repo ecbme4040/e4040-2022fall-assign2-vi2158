@@ -109,6 +109,10 @@ class MLP:
             ###############################################
             #raise NotImplementedError
             if use_bn:
+                gamma = params["bn_gamma_{}".format(i)]
+                beta = params["bn_beta_{}".format(i)]
+                cache_name = "batchnorm_{}".format(i)
+                x, cache[cache_name] = bn_forward(x, gamma, beta, bn_params[i], "train")
                 pass
             ###############################################
             # END OF BATCH NORMALIZATION                  #
@@ -124,6 +128,8 @@ class MLP:
             ###############################################
             #raise NotImplementedError
             if dropout_config['enabled']:
+                cache_name = "mask_{}".format(i)
+                x, cache[cache_name] = dropout_forward(x=x, dropout_config=dropout_config, mode="train")
                 pass
             ###############################################
             # END OF DROPOUT                              #
@@ -179,6 +185,7 @@ class MLP:
             ###############################################
             #raise NotImplementedError
             if dropout_config["enabled"]:
+                dx = dropout_backward(dx, cache["mask_{}".format(j)])
                 pass
             ###############################################
             # END OF DROPOUT                              #
@@ -192,6 +199,10 @@ class MLP:
             ###############################################
             #raise NotImplementedError
             if use_bn:
+                cache_name = "batchnorm_{}".format(j)
+                dx, dgamma, dbeta = bn_backward(dx, cache[cache_name])
+                grads["bn_gamma_{}".format(j)] = dgamma
+                grads["bn_beta_{}".format(j)] = dbeta
                 pass
             ###############################################
             # END OF BATCH NORMALIZATION                  #

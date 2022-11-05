@@ -148,7 +148,32 @@ def conv2d_forward(x, w, b, pad, stride):
     #                         TODO: YOUR CODE HERE                        #
     #######################################################################
     # raise NotImplementedError
+    new_height = ((x.shape[1] - w.shape[0] + 2 * pad) // stride) + 1
+    new_width = ((x.shape[2] - w.shape[1] + 2 * pad) // stride) + 1
+    out_size = (x.shape[0], new_height, new_width, w.shape[3])
+    out = np.zeros(out_size)
     
+    # pad
+    if pad != 0:
+        pad_size = (x.shape[0], x.shape[1] + 2 * pad, x.shape[2] + 2 * pad, x.shape[3])
+        x_pad = np.zeros(pad_size)
+        x_pad[:, int(pad):int(-1 * pad), int(pad):int(-1 * pad), :] = x
+    else:
+        x_pad = x
+   
+    
+    #convolution
+    for i_data in range(out.shape[0]):
+        for i_channel in range(out.shape[3]):
+            for i_height in range(out.shape[1]):
+                for i_width in range(out.shape[2]):
+                    conv = x_pad[i_data,
+                           i_height * stride: i_height * stride + w.shape[0],
+                           i_width * stride: i_width * stride + w.shape[1],
+                           :] * w[:, :, :, i_channel]
+                    out[i_data, i_height, i_width, i_channel] = np.sum(conv) + b[i_channel]
+
+    return out
     #######################################################################
     #                           END OF YOUR CODE                          #
     #######################################################################
@@ -210,7 +235,22 @@ def avg_pool_forward(x, pool_size, stride):
     #                         TODO: YOUR CODE HERE                        #
     #######################################################################
     # raise NotImplementedError
+    out_size = (x.shape[0], (x.shape[1] - pool_size) // stride + 1,
+                (x.shape[2] - pool_size) // stride + 1, x.shape[3])
+    out = np.zeros(out_size)
     
+    # avg pool
+    for i_data in range(out.shape[0]):
+        for i_channel in range(out.shape[3]):
+            for i_height in range(out.shape[1]):
+                for i_width in range(out.shape[2]):
+                    avg_pool = np.average(x[i_data,
+                           i_height * stride: i_height * stride + pool_size,
+                           i_width * stride: i_width * stride + pool_size,
+                           i_channel])
+                    out[i_data, i_height, i_width, i_channel] = avg_pool
+
+    return out
     #######################################################################
     #                           END OF YOUR CODE                          #
     #######################################################################
@@ -235,7 +275,17 @@ def avg_pool_backward(dout, x, pool_size, stride):
     #                         TODO: YOUR CODE HERE                        #
     #######################################################################
     # raise NotImplementedError
-    
+    dx = np.zeros_like(x)
+    batch = dout.shape[0]
+    num_of_filters = dout.shape[3]
+    for idx_data in range(batch):
+        for idx_channel in range(num_of_filters):
+            for idx_h in range(dout.shape[1]):
+                for idx_w in range(dout.shape[2]):
+                    val = dout[idx_data, idx_h, idx_w, idx_channel] / (pool_size * pool_size)
+                    dx_part = np.ones((pool_size, pool_size)) * val
+                    dx[idx_data, idx_h*stride: idx_h*stride+pool_size, idx_w*stride:idx_w*stride+pool_size, idx_channel] += dx_part
+    return dx
     #######################################################################
     #                           END OF YOUR CODE                          #
     #######################################################################

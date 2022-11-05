@@ -117,7 +117,6 @@ class SGDOptim(Optimizer):
         # get all parameters and their gradients
         params = model.params
         grads = model.grads
-
         for k in grads:
             ## update each parameter
             params[k] -= learning_rate * grads[k]
@@ -135,7 +134,7 @@ class SGDmomentumOptim(Optimizer):
         for k, v in model.params.items():
             velocities[k] = np.zeros_like(v)
         self.velocities = velocities
-
+   
     def step(self, model, learning_rate):
         """
         Implement a one-step SGD+momentum update on network's parameters
@@ -149,11 +148,17 @@ class SGDmomentumOptim(Optimizer):
         # get all parameters and their gradients
         params = model.params
         grads = model.grads
+    
         ###################################################
         # TODO: SGD+Momentum, Update params and velocities#
         ###################################################
         #raise NotImplementedError
         
+        for k in grads:
+            velocities[k] = momentum * velocities[k] - learning_rate * grads[k]
+            params[k] += velocities[k]
+        #print(velocities["weight_2"])
+            
         ###################################################
         #               END OF YOUR CODE                  #
         ###################################################
@@ -203,7 +208,14 @@ class AdamOptim(Optimizer):
         # params                                          #
         ###################################################
         #raise NotImplementedError
-        
+        #t_t = model.params.items()
+        t = t + 1
+        for k in model.params.items():
+            momentums[k[0]] = beta1*momentums[k[0]] + (1-beta1)*grads[k[0]]
+            momentum1 = momentums[k[0]]/(1-(beta1)**t)
+            velocities[k[0]] = beta2*velocities[k[0]] + (1-beta2)*(grads[k[0]])**2
+            velocity1 = velocities[k[0]]/(1-(beta2)**t)
+            params[k[0]] = params[k[0]] - np.multiply((learning_rate/(np.sqrt(velocity1)+eps)),momentum1)
         ###################################################
         #               END OF YOUR CODE                  #
         ###################################################
@@ -253,7 +265,14 @@ class NadamOptim(Optimizer):
         # params                                          #
         ###################################################
         #raise NotImplementedError
-        
+        t += 1
+        for k in grads:
+            momentums[k] = beta1 * momentums[k] + (1 - beta1) * grads[k]
+            velocities[k] = beta2 * velocities[k] + (1 - beta2) * grads[k] ** 2
+            momentums2 = momentums[k] / (1 - beta1 ** t)
+            velocitys2 = velocities[k] / (1 - beta2 ** t)
+            momentums3 = beta1 * momentums2 + (1 - beta1) * grads[k]
+            params[k] -= learning_rate * momentums3 / (np.sqrt(velocitys2) + eps)
         ###################################################
         #               END OF YOUR CODE                  #
         ###################################################
